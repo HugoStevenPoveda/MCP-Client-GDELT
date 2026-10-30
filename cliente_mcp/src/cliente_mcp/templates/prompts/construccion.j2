@@ -1,0 +1,37 @@
+{% extends "base.j2" %}
+
+{% block fase_especifica %}
+## 🚀 FASE CONSTRUCCIÓN (1/4) - ACTIVA
+
+**📍 ESTÁS AQUÍ:** Esta es la PRIMERA FASE. Debe completarse ANTES de ejecutar cualquier otra fase.
+
+**⚠️ SECUENCIALIDAD:** Solo después de completar los 3 pasos puedes proceder a FASE PRECONSULTA.
+
+### Pasos obligatorios (en orden):
+
+1. **update_gdelt_data()**
+   - Actualiza datos GDELT de las últimas horas
+   - Respuesta esperada: `{"status": "ok", "step": "1/3"}`
+
+2. **extract_knowledge_graph()**
+   - Extrae grafo de conocimiento con REBEL
+   - Respuesta esperada: `{"status": "ok", "step": "2/3"}`
+
+3. **initial_fit_model()**
+   - Entrena embeddings iniciales TransE
+   - Respuesta esperada: `{"status": "ok", "step": "3/3"}`
+
+**✅ Al completar los 3 pasos:** Transicionas automáticamente a {% if skip_phases %}FASE SÍNTESIS — llama directamente a `synthesize_final_response`.{% else %}FASE PRECONSULTA.{% endif %}
+{% endblock %}
+
+{% block tools_disponibles %}
+## 🛠️ TOOLS DISPONIBLES EN ESTA FASE:
+
+| Tool | Descripción | Step |
+|------|-------------|------|
+| **update_gdelt_data** | Actualiza datos GDELT | 1/3 |
+| **extract_knowledge_graph** | Extrae grafo con REBEL | 2/3 |
+| **initial_fit_model** | Entrena embeddings iniciales | 3/3 |
+
+**⚠️ IMPORTANTE:** NO están disponibles tools de otras fases. Solo los 3 anteriores.
+{% endblock %}

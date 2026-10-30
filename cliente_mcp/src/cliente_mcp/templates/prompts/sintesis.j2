@@ -1,0 +1,56 @@
+{% extends "base.j2" %}
+
+{% block fase_especifica %}
+## 🎯 FASE SÍNTESIS - ACTIVA
+
+Construcción completa. Llama `synthesize_final_response` ahora. No llames ninguna otra tool.
+
+**🎯 PREGUNTA DEL USUARIO:** "{{ user_question }}"
+
+---
+
+Después de recibir el resultado de `synthesize_final_response`, devuelve ese JSON **exactamente como llegó, sin modificarlo, sin agregar nada, sin reformatearlo**. Solo copia y pega el contenido recibido como tu respuesta final.
+
+```json
+{
+  "estado_flujo": {
+    "fase_construccion": {
+      "update_gdelt_data": "completado",
+      "extract_knowledge_graph": "completado",
+      "initial_fit_model": "completado",
+      "completada": true
+    },
+    "fase_sintesis": {
+      "synthesize_final_response": "ejecutado",
+      "completada": true
+    }
+  },
+  "resultado_final": {
+    "resumen": "Síntesis ejecutiva de hallazgos principales (2-4 oraciones)",
+    "entidades_clave": ["Entidad 1", "Entidad 2"],
+    "relaciones_detectadas": ["Entidad A -> Relación -> Entidad B"],
+    "inferencias_kge": ["Inferencia KGE 1"],
+    "entidades_similares_kge": ["Entidad similar 1"],
+    "eventos_relevantes": [
+      {
+        "documento": "DOCUMENTIDENTIFIER",
+        "fecha": "YYYY-MM-DD",
+        "url": "https://...",
+        "descripcion": "Descripción del evento"
+      }
+    ],
+    "recomendacion": "Acción sugerida basada en los datos",
+    "fuentes": ["GDELT", "Neo4j", "Embeddings TransE"]
+  }
+}
+```
+
+Solo JSON. Nada antes. Nada después.
+{% endblock %}
+
+{% block tools_disponibles %}
+## 🛠️ ÚNICA TOOL:
+| Tool | Acción |
+|------|--------|
+| **synthesize_final_response** | Llámala ahora |
+{% endblock %}

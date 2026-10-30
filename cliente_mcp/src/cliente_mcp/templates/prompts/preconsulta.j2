@@ -1,0 +1,61 @@
+{% extends "base.j2" %}
+
+{% block fase_especifica %}
+## 🔍 FASE PRECONSULTA (2/4) - ACTIVA
+
+**📍 ESTÁS AQUÍ:** FASE CONSTRUCCIÓN completada ✅. Ahora recopila metadatos del sistema.
+
+**⚠️ PREREQUISITO:** FASE CONSTRUCCIÓN debe estar COMPLETADA (3/3 pasos ejecutados).
+
+**⚠️ SECUENCIALIDAD:** Esta fase recopila metadatos y contexto del sistema. Solo después de completar los 4 pasos puedes proceder a FASE DE CONSULTAS.
+
+**🎯 PROPÓSITO:** Obtener información del sistema que guiará las consultas analíticas posteriores:
+- Tipos de relaciones disponibles en el grafo
+- IDs de registros recientes (últimos 30 minutos)
+- Tripletas de documentos recientes (automático)
+- Eventos GDELT del contexto general
+
+### Pasos obligatorios (en orden):
+
+1. **get_tipos_relaciones()**
+   - Consulta Neo4j para obtener TODOS los tipos de relaciones existentes en el grafo
+   - Para qué: Conocer qué relaciones puedes buscar en discover_plausible_triplets
+   - Respuesta: Lista de relaciones disponibles (ej: "COUNTRY, SUPPORTS, COOPERATES, ...")
+
+2. **get_record_ids_recientes()**
+   - Obtiene los gkg_record_id de relaciones creadas en los últimos 30 minutos
+   - Para qué: Identificar eventos recientes para extraer tripletas
+   - Respuesta: Lista de IDs recientes (ej: "20251110030000-140, 20251110025500-89, ...")
+
+3. **query_by_gkg_record_id()**
+   - **IMPORTANTE:** Se ejecuta automáticamente para múltiples record_ids
+   - NO necesitas especificar parámetros, el sistema usa los IDs del paso 2
+   - Extrae tripletas de los primeros 5-10 documentos recientes
+   - Para qué: Obtener tripletas reales que luego validarás con discover_top_n
+   - Respuesta: "✓ X tripletas extraídas de Y documentos"
+
+4. **query_gdelt_data()**
+   - **IMPORTANTE:** En esta fase se llama SIN parámetros (sql_query)
+   - Consulta eventos GDELT generales (últimos 15 minutos)
+   - Para qué: Obtener contexto general de eventos antes de las consultas analíticas
+   - Respuesta: Confirmación de consulta acumulada
+
+**✓ VALIDACIÓN:** Los 4 pasos son OBLIGATORIOS. NO puedes proceder a FASE DE CONSULTAS sin ejecutar estos 4 tools.
+
+**✅ Al completar los 4 pasos:** Transicionas automáticamente a FASE DE CONSULTAS.
+
+**📊 PROGRESO:** Los datos de preconsulta se guardan en `logs/preconsulta.json` y estarán disponibles en la siguiente fase.
+{% endblock %}
+
+{% block tools_disponibles %}
+## 🛠️ TOOLS DISPONIBLES EN ESTA FASE:
+
+| Tool | Descripción | Tipo |
+|------|-------------|------|
+| **get_tipos_relaciones** | Obtiene tipos de relaciones del grafo | Obligatorio (1/4) |
+| **get_record_ids_recientes** | Obtiene IDs de registros recientes | Obligatorio (2/4) |
+| **query_by_gkg_record_id** | Extrae tripletas de documentos (automático) | Obligatorio (3/4) |
+| **query_gdelt_data** | Consulta eventos GDELT generales (SIN parámetros) | Obligatorio (4/4) |
+
+**⚠️ IMPORTANTE:** NO están disponibles tools de consultas analíticas todavía. Solo los 4 anteriores.
+{% endblock %}

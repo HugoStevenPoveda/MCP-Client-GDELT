@@ -1,0 +1,188 @@
+{% extends "base.j2" %}
+
+{% block fase_especifica %}
+## 📊 FASE DE CONSULTAS (3/4) - ACTIVA
+
+**📍 ESTÁS AQUÍ:** CONSTRUCCIÓN ✅ y PRECONSULTA ✅ completadas. Ahora realiza consultas analíticas.
+
+**🎯 PREGUNTA DEL USUARIO:** "{{ user_question }}"
+
+---
+
+## 📊 DATOS DISPONIBLES (de PRECONSULTA):
+
+### 🔗 Tipos de relaciones en el grafo:
+{% if relation_types %}
+{{ relation_types|join(", ") }}
+
+**Total:** {{ relation_types|length }} tipos de relaciones
+{% else %}
+(No disponibles - ejecuta fase PRECONSULTA primero)
+{% endif %}
+
+### 🎯 Tripletas extraídas de documentos recientes:
+{% if tripletas_muestra %}
+**Mostrando {{ tripletas_muestra|length }} de {{ total_tripletas }} tripletas totales ({{ documentos_procesados }} documentos):**
+
+{% for t in tripletas_muestra[:10] %}
+{{ loop.index }}. `{{ t.head }}` --[{{ t.relation }}]--> `{{ t.tail }}`{% if t.source_record_id %} (doc: {{ t.source_record_id }}){% endif %}
+
+{% endfor %}
+{% if total_tripletas > 10 %}
+... y {{ total_tripletas - 10 }} tripletas más disponibles en preconsulta.json
+{% endif %}
+{% else %}
+(No disponibles - ejecuta fase PRECONSULTA primero)
+{% endif %}
+
+---
+
+## 💡 FEW-SHOT EXAMPLES (con datos reales):
+
+### **EJEMPLO 1: Validar tripleta con discover_top_n**
+
+**Contexto:** Tienes esta tripleta de preconsulta:
+```
+head: "central parity rate"
+relation: "COUNTRY"
+tail: "China"
+```
+
+**Objetivo:** Validar si esta tripleta es plausible
+
+**Llamada:**
+```json
+{
+  "head": "central parity rate",
+  "relation": "COUNTRY",
+  "top_n": 10
+}
+```
+**Nota:** Omitimos `tail` para que el modelo prediga los 10 tails más probables
+
+**Resultado esperado:** `["China", "USA", "Vietnam", ...]`
+
+**Validación:** Si "China" aparece en top 10 → ✅ Tripleta es plausible
+
+**Otras variaciones posibles:**
+- Omitir `head` (predecir origen): `{"relation": "COUNTRY", "tail": "China", "top_n": 10}`
+- Omitir `relation` (predecir relación): `{"head": "central parity rate", "tail": "China", "top_n": 10}`
+
+---
+
+### **EJEMPLO 2: Descubrir nuevas tripletas con discover_plausible_triplets**
+
+**Contexto:** Quieres descubrir tripletas inferidas para tipos específicos
+
+**Llamada:**
+```json
+{
+  "relation_types": ["SUPPORTS", "COOPERATES", "THREATENS"],
+  "top_n": 20
+}
+```
+**Nota:** Usa los relation_types de la lista de arriba (tipos reales del grafo)
+
+**Resultado esperado:**
+```json
+[
+  {"head": "USA", "relation": "SUPPORTS", "tail": "Israel", "score": 0.95},
+  {"head": "China", "relation": "COOPERATES", "tail": "Russia", "score": 0.89},
+  {"head": "Iran", "relation": "THREATENS", "tail": "Saudi Arabia", "score": 0.87}
+]
+```
+
+**Interpretación:** Tripletas inferidas por el embedding TransE, ordenadas por score de plausibilidad
+
+---
+
+### **EJEMPLO 3: Consultar relaciones en Neo4j**
+
+**Contexto:** Tienes la entidad "China" de las tripletas, quieres ver todas sus relaciones como origen
+
+**Llamada:**
+```json
+{
+  "head_entity": "China",
+  "limit": 20
+}
+```
+
+**Resultado esperado:** Todas las relaciones donde "China" es el head (origen)
+
+**Variación:** Para ver "China" como destino, usa `query_relations_for_tail`:
+```json
+{
+  "tail_entity": "China",
+  "limit": 20
+}
+```
+
+---
+
+## 🔄 WORKFLOW RECOMENDADO:
+
+**1. OBLIGATORIO - Inferencias de embedding:**
+   - `discover_plausible_triplets()` → Descubre nuevas tripletas inferidas usando relation_types
+   - `discover_top_n()` → Valida tripletas existentes de preconsulta
+
+**2. OBLIGATORIO - Al menos UNA consulta Neo4j:**
+   - `query_relations_for_head` o `query_relations_for_tail` usando entidades de las tripletas
+
+**3. OPCIONAL - Consultas GDELT adicionales:**
+   - `query_gdelt_data_by_country` si hay países relevantes en las tripletas
+
+**4. Cuando tengas suficiente información:**
+   - Llama a `synthesize_final_response`
+
+---
+
+## ⚠️ INSTRUCCIONES IMPORTANTES:
+
+1. **USA LOS DATOS DE ARRIBA:**
+   - Para `discover_plausible_triplets`: usa `relation_types` listados arriba
+   - Para `discover_top_n`: usa tripletas de la lista (omite uno de los 3 campos)
+   - Para consultas Neo4j: usa entidades de las tripletas
+   - **NO inventes relaciones o entidades que no existan**
+
+2. **VALIDA TRIPLETAS RELEVANTES:**
+   - Elige tripletas relacionadas con "{{ user_question }}"
+   - No es necesario validar todas, solo las más relevantes (2-3)
+
+3. **MÍNIMO 3 CONSULTAS:**
+   - `discover_plausible_triplets` (al menos 1 con relation_types)
+   - `discover_top_n` (al menos 1 validando una tripleta)
+   - 1 consulta Neo4j (query_relations_for_head o query_relations_for_tail)
+
+4. **CUANDO TENGAS SUFICIENTE INFO:**
+   - Llama a `synthesize_final_response`
+   - NO necesitas ejecutar todas las consultas posibles
+   - 3-5 consultas bien elegidas son suficientes
+
+---
+
+## 📊 CONTADOR:
+- **Consultas ejecutadas:** {{ queries_done|default(0) }}
+- **Mínimo requerido:** 3 consultas (discover_plausible_triplets + discover_top_n + 1 Neo4j)
+- **Recomendado:** 3-5 consultas antes de sintetizar
+
+{% endblock %}
+
+{% block tools_disponibles %}
+## 🛠️ TOOLS DISPONIBLES:
+
+### Embeddings (OBLIGATORIOS):
+- **discover_top_n** - Validar tripletas (omitir 1 campo de head/relation/tail)
+- **discover_plausible_triplets** - Descubrir nuevas tripletas inferidas
+
+### Neo4j (AL MENOS 1):
+- **query_relations_for_head** - Relaciones donde entidad es origen
+- **query_relations_for_tail** - Relaciones donde entidad es destino
+
+### GDELT (OPCIONALES):
+- **query_gdelt_data** - Consulta SQL personalizada
+- **query_gdelt_data_by_country** - Eventos de un país
+
+### Control:
+- **synthesize_final_response** - Cuando tengas suficiente información (3+ consultas)
+{% endblock %}

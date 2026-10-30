@@ -1,0 +1,26 @@
+[project]
+name = "cliente-mcp"
+version = "0.1.0"
+description = "Cliente MCP con interfaz Gradio"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=2.12.4",
+    "anthropic>=0.21.0",
+    "gradio>=4.0.0",
+    "python-dotenv>=1.1.1",
+    "loguru>=0.7.0",
+    "langchain-openai",
+    "langchain-neo4j",
+    "langchain-mcp-adapters",
+    "langgraph",
+    "pydantic>=2.0",
+    "jupyter==1.1.1",
+   "jupyterlab==4.2.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cliente_mcp", "src/agentGraphRag"]
